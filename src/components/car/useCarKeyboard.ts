@@ -66,6 +66,7 @@ export function useCarKeyboard(
 
   useEffect(() => {
     const input = inputRef.current ?? createEmptyCarInput()
+    ;(window as unknown as { __carInput?: CarInput }).__carInput = input
 
     const syncInputFromHeld = () => {
       Object.assign(input, createEmptyCarInput())

@@ -47,50 +47,15 @@ function ResetCameraIcon() {
   )
 }
 
-function FollowCarIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M5 17h14v-5H5v5Z" />
-      <path d="M7 12V7l3-3h4l3 3v5" />
-      <circle cx="7.5" cy="17" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="16.5" cy="17" r="1.5" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
-
 type GameHUDProps = {
   onResetCamera: () => void
-  followCar: boolean
-  onToggleFollowCar: () => void
 }
 
-export function GameHUD({
-  onResetCamera,
-  followCar,
-  onToggleFollowCar,
-}: GameHUDProps) {
+export function GameHUD({ onResetCamera }: GameHUDProps) {
   return (
     <div className="absolute right-4 top-4 z-10 flex gap-2">
       <IconButton label="Reset camera" onClick={onResetCamera}>
         <ResetCameraIcon />
-      </IconButton>
-      <IconButton
-        label={followCar ? 'Follow car (on)' : 'Follow car (off)'}
-        onClick={onToggleFollowCar}
-        accent={followCar}
-      >
-        <FollowCarIcon />
       </IconButton>
     </div>
   )

@@ -25,7 +25,6 @@ export type GameSceneHandle = {
 }
 
 type GameSceneProps = {
-  followCar: boolean
   sceneRootRef: React.RefObject<HTMLElement | null>
 }
 
@@ -73,6 +72,7 @@ const _offset = new Vector3()
 function clampPanTarget(
   camera: PerspectiveCamera,
   controls: OrbitControlsImpl,
+  maxRadius: number,
 ) {
   const { target } = controls
   const dx = target.x
@@ -82,8 +82,8 @@ function clampPanTarget(
   let corrY = 0
   let corrZ = 0
 
-  if (distXZ > MAX_PAN_TARGET_RADIUS) {
-    const scale = MAX_PAN_TARGET_RADIUS / distXZ
+  if (distXZ > maxRadius) {
+    const scale = maxRadius / distXZ
     corrX = dx * scale - dx
     corrZ = dz * scale - dz
   }
@@ -147,18 +147,20 @@ function OrbitRotationLock({
 
 function PanTargetLimiter({
   controlsRef,
-  followCar,
+  carGroupRef,
 }: {
   controlsRef: React.RefObject<OrbitControlsImpl | null>
-  followCar: boolean
+  carGroupRef: React.RefObject<Group | null>
 }) {
   const camera = useThree((s) => s.camera as PerspectiveCamera)
 
   useFrame(() => {
-    if (followCar) return
     const controls = controlsRef.current
     if (!controls?.enablePan) return
-    clampPanTarget(camera, controls)
+    const car = carGroupRef.current
+    const carRadius = car ? Math.hypot(car.position.x, car.position.z) : 0
+    const maxRadius = Math.max(MAX_PAN_TARGET_RADIUS, carRadius)
+    clampPanTarget(camera, controls, maxRadius)
   })
 
   return null
@@ -184,13 +186,11 @@ function WorldScene({
   controlsRef,
   registerReset,
   carGroupRef,
-  followCar,
   sceneRootRef,
 }: {
   controlsRef: React.RefObject<OrbitControlsImpl | null>
   registerReset: (reset: () => void) => void
   carGroupRef: React.RefObject<Group | null>
-  followCar: boolean
   sceneRootRef: React.RefObject<HTMLElement | null>
 }) {
   return (
@@ -225,19 +225,15 @@ function WorldScene({
         }}
       />
       <OrbitRotationLock controlsRef={controlsRef} />
-      <PanTargetLimiter controlsRef={controlsRef} followCar={followCar} />
-      <FollowCarCamera
-        enabled={followCar}
-        carGroupRef={carGroupRef}
-        controlsRef={controlsRef}
-      />
+      <PanTargetLimiter controlsRef={controlsRef} carGroupRef={carGroupRef} />
+      <FollowCarCamera carGroupRef={carGroupRef} controlsRef={controlsRef} />
       <RegisterCameraReset controlsRef={controlsRef} registerReset={registerReset} />
     </>
   )
 }
 
 export const GameScene = forwardRef<GameSceneHandle, GameSceneProps>(
-  function GameScene({ followCar, sceneRootRef }, ref) {
+  function GameScene({ sceneRootRef }, ref) {
   const controlsRef = useRef<OrbitControlsImpl>(null)
   const cameraRef = useRef<PerspectiveCamera | null>(null)
   const carGroupRef = useRef<Group>(null)
@@ -275,7 +271,6 @@ export const GameScene = forwardRef<GameSceneHandle, GameSceneProps>(
         controlsRef={controlsRef}
         registerReset={registerReset}
         carGroupRef={carGroupRef}
-        followCar={followCar}
         sceneRootRef={sceneRootRef}
       />
     </Canvas>
