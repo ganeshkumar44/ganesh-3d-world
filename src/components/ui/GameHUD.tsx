@@ -47,7 +47,7 @@ function ResetCameraIcon() {
   )
 }
 
-function SettingsIcon() {
+function FollowCarIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -61,24 +61,36 @@ function SettingsIcon() {
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-      <circle cx="12" cy="12" r="3" />
+      <path d="M5 17h14v-5H5v5Z" />
+      <path d="M7 12V7l3-3h4l3 3v5" />
+      <circle cx="7.5" cy="17" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="16.5" cy="17" r="1.5" fill="currentColor" stroke="none" />
     </svg>
   )
 }
 
 type GameHUDProps = {
   onResetCamera: () => void
+  followCar: boolean
+  onToggleFollowCar: () => void
 }
 
-export function GameHUD({ onResetCamera }: GameHUDProps) {
+export function GameHUD({
+  onResetCamera,
+  followCar,
+  onToggleFollowCar,
+}: GameHUDProps) {
   return (
     <div className="absolute right-4 top-4 z-10 flex gap-2">
       <IconButton label="Reset camera" onClick={onResetCamera}>
         <ResetCameraIcon />
       </IconButton>
-      <IconButton label="Settings" accent>
-        <SettingsIcon />
+      <IconButton
+        label={followCar ? 'Follow car (on)' : 'Follow car (off)'}
+        onClick={onToggleFollowCar}
+        accent={followCar}
+      >
+        <FollowCarIcon />
       </IconButton>
     </div>
   )

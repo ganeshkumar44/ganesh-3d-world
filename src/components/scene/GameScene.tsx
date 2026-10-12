@@ -10,6 +10,9 @@ import {
 } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier'
+import type { Group } from 'three'
+import { CarController } from '../car/CarController'
+import { FollowCarCamera } from '../car/FollowCarCamera'
 import {
   DEFAULT_CAMERA,
   MAX_PAN_TARGET_RADIUS,
@@ -19,6 +22,11 @@ import {
 
 export type GameSceneHandle = {
   resetCamera: () => void
+}
+
+type GameSceneProps = {
+  followCar: boolean
+  sceneRootRef: React.RefObject<HTMLElement | null>
 }
 
 const SURFACE_SIZE = 120
@@ -139,12 +147,15 @@ function OrbitRotationLock({
 
 function PanTargetLimiter({
   controlsRef,
+  followCar,
 }: {
   controlsRef: React.RefObject<OrbitControlsImpl | null>
+  followCar: boolean
 }) {
   const camera = useThree((s) => s.camera as PerspectiveCamera)
 
   useFrame(() => {
+    if (followCar) return
     const controls = controlsRef.current
     if (!controls?.enablePan) return
     clampPanTarget(camera, controls)
@@ -172,9 +183,15 @@ function RegisterCameraReset({
 function WorldScene({
   controlsRef,
   registerReset,
+  carGroupRef,
+  followCar,
+  sceneRootRef,
 }: {
   controlsRef: React.RefObject<OrbitControlsImpl | null>
   registerReset: (reset: () => void) => void
+  carGroupRef: React.RefObject<Group | null>
+  followCar: boolean
+  sceneRootRef: React.RefObject<HTMLElement | null>
 }) {
   return (
     <>
@@ -184,6 +201,7 @@ function WorldScene({
       <SceneHelpers />
       <Physics gravity={[0, -9.81, 0]}>
         <BuildSurface />
+        <CarController sceneRootRef={sceneRootRef} carGroupRef={carGroupRef} />
       </Physics>
       <OrbitControls
         ref={controlsRef}
@@ -207,15 +225,22 @@ function WorldScene({
         }}
       />
       <OrbitRotationLock controlsRef={controlsRef} />
-      <PanTargetLimiter controlsRef={controlsRef} />
+      <PanTargetLimiter controlsRef={controlsRef} followCar={followCar} />
+      <FollowCarCamera
+        enabled={followCar}
+        carGroupRef={carGroupRef}
+        controlsRef={controlsRef}
+      />
       <RegisterCameraReset controlsRef={controlsRef} registerReset={registerReset} />
     </>
   )
 }
 
-export const GameScene = forwardRef<GameSceneHandle>(function GameScene(_, ref) {
+export const GameScene = forwardRef<GameSceneHandle, GameSceneProps>(
+  function GameScene({ followCar, sceneRootRef }, ref) {
   const controlsRef = useRef<OrbitControlsImpl>(null)
   const cameraRef = useRef<PerspectiveCamera | null>(null)
+  const carGroupRef = useRef<Group>(null)
   const resetRef = useRef<(() => void) | null>(null)
 
   useImperativeHandle(ref, () => ({
@@ -246,7 +271,14 @@ export const GameScene = forwardRef<GameSceneHandle>(function GameScene(_, ref) 
         cameraRef.current = camera as PerspectiveCamera
       }}
     >
-      <WorldScene controlsRef={controlsRef} registerReset={registerReset} />
+      <WorldScene
+        controlsRef={controlsRef}
+        registerReset={registerReset}
+        carGroupRef={carGroupRef}
+        followCar={followCar}
+        sceneRootRef={sceneRootRef}
+      />
     </Canvas>
   )
-})
+},
+)
