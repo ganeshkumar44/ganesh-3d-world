@@ -1,5 +1,5 @@
 import { Grid, OrbitControls } from '@react-three/drei'
-import { Canvas, useThree } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import {
   MOUSE,
@@ -10,7 +10,12 @@ import {
 } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier'
-import { DEFAULT_CAMERA, MIN_CAMERA_DISTANCE } from './cameraDefaults'
+import {
+  DEFAULT_CAMERA,
+  MAX_PAN_TARGET_RADIUS,
+  MAX_PAN_TARGET_Y,
+  MIN_CAMERA_DISTANCE,
+} from './cameraDefaults'
 
 export type GameSceneHandle = {
   resetCamera: () => void
@@ -57,6 +62,40 @@ function SceneHelpers() {
 
 const _offset = new Vector3()
 
+function clampPanTarget(
+  camera: PerspectiveCamera,
+  controls: OrbitControlsImpl,
+) {
+  const { target } = controls
+  const dx = target.x
+  const dz = target.z
+  const distXZ = Math.hypot(dx, dz)
+  let corrX = 0
+  let corrY = 0
+  let corrZ = 0
+
+  if (distXZ > MAX_PAN_TARGET_RADIUS) {
+    const scale = MAX_PAN_TARGET_RADIUS / distXZ
+    corrX = dx * scale - dx
+    corrZ = dz * scale - dz
+  }
+
+  const clampedY = Math.max(-MAX_PAN_TARGET_Y, Math.min(MAX_PAN_TARGET_Y, target.y))
+  if (clampedY !== target.y) {
+    corrY = clampedY - target.y
+  }
+
+  if (corrX === 0 && corrY === 0 && corrZ === 0) return
+
+  target.x += corrX
+  target.y += corrY
+  target.z += corrZ
+  camera.position.x += corrX
+  camera.position.y += corrY
+  camera.position.z += corrZ
+  controls.update()
+}
+
 function lockOrbitRotation(
   camera: PerspectiveCamera,
   controls: OrbitControlsImpl,
@@ -94,6 +133,22 @@ function OrbitRotationLock({
     if (!controls) return
     lockOrbitRotation(camera, controls)
   }, [camera, controlsRef])
+
+  return null
+}
+
+function PanTargetLimiter({
+  controlsRef,
+}: {
+  controlsRef: React.RefObject<OrbitControlsImpl | null>
+}) {
+  const camera = useThree((s) => s.camera as PerspectiveCamera)
+
+  useFrame(() => {
+    const controls = controlsRef.current
+    if (!controls?.enablePan) return
+    clampPanTarget(camera, controls)
+  })
 
   return null
 }
@@ -152,6 +207,7 @@ function WorldScene({
         }}
       />
       <OrbitRotationLock controlsRef={controlsRef} />
+      <PanTargetLimiter controlsRef={controlsRef} />
       <RegisterCameraReset controlsRef={controlsRef} registerReset={registerReset} />
     </>
   )

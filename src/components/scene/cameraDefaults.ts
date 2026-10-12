@@ -12,3 +12,7 @@ export const DEFAULT_CAMERA = {
   fov: 45,
   target: [0, 0, 0] as [number, number, number],
 }
+
+/** Keep OrbitControls target near world origin so panning cannot lose the build surface. */
+export const MAX_PAN_TARGET_RADIUS = 45
+export const MAX_PAN_TARGET_Y = 8
